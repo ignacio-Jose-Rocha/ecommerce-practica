@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-  "start": "node config.js",
-  "dev": "nodemon config.js"
+  "start": "node config/config.js",
+  "dev": "nodemon config/config.js"
 },
 
   "keywords": [],

@@ -1,5 +1,5 @@
 
-const db = require('../config.js');
+const db = require('../config/config.js');
 
 exports.getAllUsers = (req, res) => {
   db.query('SELECT * FROM usuarios', (err, results) => {

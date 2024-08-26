@@ -24,7 +24,7 @@ connection.connect((error) => {
 
 app.use(express.json());
 
-const usersRoutes = require('./routes/usuarioRoutes');
+const usersRoutes = require('../routes/usuarioRoutes');
 app.use('/api/usuarios', usersRoutes);
 
 app.listen(port, () => {
