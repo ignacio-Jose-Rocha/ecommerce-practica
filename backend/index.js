@@ -18,6 +18,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 const routerUsuario = require('./routes/usuariosRoutes');
 app.use('/usuario', routerUsuario);
 
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use((err, req, res, next) => {
