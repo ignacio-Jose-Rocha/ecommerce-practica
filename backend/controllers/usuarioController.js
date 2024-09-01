@@ -1,6 +1,5 @@
 const pool = require('../config.js');
 const nodemailer = require('nodemailer');
-const crypto = require('crypto');
 
 exports.getAllUsuarios = async (req, res) => {
   try {
@@ -39,37 +38,15 @@ const crearTransportadorEthereal = nodemailer.createTransport({
   }
 });
 
-async function verificarUsuario(req, res) {
-  try {
-    const { token_verificacion } = req.params; 
-    if (!token_verificacion) {
-      return res.status(400).json({ error: 'Token de verificación no proporcionado.' });
-    }
 
-    const [rows] = await pool.query('SELECT * FROM usuarios WHERE token_verificacion = ?', [token_verificacion]);
-    console.log(rows)
-    if (rows.length === 0) {
-      return res.status(404).json({ error: 'Usuario no encontrado o token inválido.' });
-    }
-
-    await pool.query('UPDATE usuarios SET registrado = 1, token_verificacion = NULL WHERE token_verificacion = ?', [token_verificacion]);
-
-    res.status(200).json({ mensaje: 'Usuario verificado con éxito.' });
-  } catch (error) {
-    console.error('Error al verificar el usuario:', error);
-    res.status(500).json({ error: 'Error al verificar el usuario.' });
-  }
-}
-exports.verificarUsuario = verificarUsuario;
-
-async function enviarCorreoVerificacion(email, enlaceVerificacion) {
+async function enviarCorreoVerificacion(email, nombre, apellido) {
   let transportador = crearTransportadorEthereal;
 
   let info = await transportador.sendMail({
-    from: '"Nombre del Remitente" <ignacio.jose.pancho@outlook.com>',
+    from: 'ecommerce verificacion <ignacio.jose.pancho@outlook.com>',
     to: email,
-    subject: "Verifica tu cuenta",
-    html: `<p>Felicidades, verificó su registro a nuestra plataforma.</p><p>Haz clic en el siguiente enlace para verificar tu cuenta: <a href="${enlaceVerificacion}">${enlaceVerificacion}</a></p>`, // cuerpo del correo en HTML
+    subject: "Registro exitoso",
+    html: `<p>Felicidades ${nombre} ${apellido}, tu correo ha sido verificado exitosamente</p>`,
   });
 
   console.log("Mensaje enviado: %s", info.messageId);
@@ -77,12 +54,19 @@ async function enviarCorreoVerificacion(email, enlaceVerificacion) {
 
 exports.createUsuario = async (req, res) => {
   const { nombre, apellido, direccion, email, contrasena, foto, fecha_registro } = req.body;
-  const token_verificacion = crypto.randomBytes(20).toString('hex'); 
 
   try {
-    const [result] = await pool.query('INSERT INTO usuarios (nombre, apellido, direccion, email, contrasena, foto, fecha_registro, token_verificacion) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [nombre, apellido, direccion, email, contrasena, foto, fecha_registro, token_verificacion]);
+  
+    const [usuarios] = await pool.query('SELECT * FROM usuarios WHERE email = ?', [email]);
+    if (usuarios.length > 0) {
+      return res.status(400).json({ error: 'El usuario ya existe' });
+    }
 
-    await enviarCorreoVerificacion(email, `http://localhost:5173/verificar/${token_verificacion}`);
+ 
+    const [result] = await pool.query('INSERT INTO usuarios (nombre, apellido, direccion, email, contrasena, foto, fecha_registro) VALUES (?, ?, ?, ?, ?, ?, ?)', [nombre, apellido, direccion, email, contrasena, foto, fecha_registro]);
+
+
+    await enviarCorreoVerificacion(email, nombre, apellido);
 
     res.status(201).json({
       id: result.insertId,
@@ -93,7 +77,6 @@ exports.createUsuario = async (req, res) => {
       contrasena,
       foto,
       fecha_registro,
-      token_verificacion
     });
     
   } catch (error) {
@@ -103,6 +86,18 @@ exports.createUsuario = async (req, res) => {
 };
 
 
+async function enviarCorreoActualizacion(email, nombre, apellido) {
+  let transportador = crearTransportadorEthereal;
+
+  let info = await transportador.sendMail({
+    from: 'ecommerce verificacion <ignacio.jose.pancho@outlook.com>',
+    to: email,
+    subject: "Actualización de perfil exitosa",
+    html: `<p>Hola ${nombre} ${apellido}, tus datos han sido actualizados correctamente.</p>`,
+  });
+
+  console.log("Mensaje de actualización enviado: %s", info.messageId);
+}
 
 exports.updateUsuario = async (req, res) => { 
   const { id } = req.params;
@@ -112,6 +107,9 @@ exports.updateUsuario = async (req, res) => {
     if (rows.affectedRows === 0) {
       return res.status(404).json({ error: 'Usuario no encontrado' });
     }
+
+    await enviarCorreoActualizacion(email, nombre, apellido);
+
     res.json({
       id,
       nombre,
@@ -149,9 +147,10 @@ exports.loginUsuario = async (req, res) => {
     if (rows.length === 0) {
       return res.status(404).json({ error: 'Usuario no encontrado' });
     }
+    await pool.query('UPDATE usuarios SET logueado = 1 WHERE email = ?', [email]);
     res.json(rows[0]);
   } catch (error) {
-    console.error('Error al obtener el usuario:', error);
-    res.status(500).json({ error: 'Error al obtener el usuario' });
+    console.error('Error al obtener el usuario o al actualizar el estado de logueado:', error);
+    res.status(500).json({ error: 'Error al obtener el usuario o al actualizar el estado de logueado' });
   }
 };

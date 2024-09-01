@@ -7,5 +7,4 @@ router.post('/crearUsuario', usuariosController.createUsuario);
 router.put('/actualizarUsuario/:id', usuariosController.updateUsuario);
 router.delete('/borrarUsuario/:id', usuariosController.deleteUsuario);
 router.get('/login', usuariosController.loginUsuario);
-router.get('/verificar/:token_verificacion', usuariosController.verificarUsuario);
 module.exports = router;
