@@ -24,6 +24,8 @@ app.use('/reclamos', routerReclamo);
 const routerProducto = require('./routes/productosRoutes');
 app.use('/productos', routerProducto);
 
+const routerPedidos = require('./routes/pedidosRoutes');
+app.use('/pedidos', routerPedidos);
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use((err, req, res, next) => {
