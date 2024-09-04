@@ -1,7 +1,6 @@
 const pool = require('../config.js');
 const nodemailer = require('nodemailer');
 
-
 exports.getAllProductos = async (req, res) => {
     try {
         const [rows] = await pool.query('SELECT * FROM productos');
@@ -25,9 +24,9 @@ exports.getProducto = async (req, res) => {
     }
 }   
 exports.crearProductos = async (req, res) => {
-    const { nombre, precio,stock,foto,descripcion } = req.body;
+    const { nombre, precio, stock, foto, descripcion } = req.body;
     try {
-        const [rows] = await pool.query('INSERT INTO productos (nombre, precio,stock,foto,descripcion) VALUES (?, ?, ?, ?,?)', [nombre, precio,stock,foto,descripcion]);
+        const [rows] = await pool.query('INSERT INTO productos (nombre, precio, stock, foto, descripcion) VALUES (?, ?, ?, ?, ?)', [nombre, precio, stock, foto, descripcion]);
         res.status(201).json({
             id: rows.insertId,
             nombre,
@@ -38,9 +37,9 @@ exports.crearProductos = async (req, res) => {
         });
     } catch (error) {
         console.error('Error al crear el producto:', error);
-        res.status(500).json({ error: 'Error al crear el reclamo' });
+        res.status(500).json({ error: 'Error al crear el producto' });
     }
-}
+};
 exports.actualizarProducto = async (req, res) => {
     const { id } = req.params;
     const { nombre, precio,stock,foto,descripcion } = req.body;

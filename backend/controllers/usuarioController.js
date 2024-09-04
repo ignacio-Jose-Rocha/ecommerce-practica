@@ -1,9 +1,9 @@
 const pool = require('../config.js');
 const nodemailer = require('nodemailer');
 
-exports.getAllUsuarios = async (req, res) => {
+exports.getAllUsuariosClientes = async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM usuarios');
+    const [rows] = await pool.query('SELECT * FROM clientes WHERE rol = "cliente"');
     res.json(rows);
   } catch (error) {
     console.error('Error al obtener los usuarios:', error);
@@ -11,10 +11,20 @@ exports.getAllUsuarios = async (req, res) => {
   }
 };
 
+exports.getAllUsuariosadministrador = async (req, res) => {
+  try {
+    const [rows] = await pool.query('SELECT * FROM usuarios WHERE rol = "administrador"');
+    res.json(rows);
+  } catch (error) {
+    console.error('Error al obtener los usuarios:', error);
+    res.status(500).json({ error: 'Error al obtener los usuarios' });
+  }
+}
+
 exports.getUsuarioById = async (req, res) => {
   const { id } = req.params;
   try {
-    const [rows] = await pool.query('SELECT * FROM usuarios WHERE id_usuario = ?', [id]);
+    const [rows] = await pool.query('SELECT * FROM usuarios WHERE id_cliente = ?', [id]);
     if (rows.length === 0) {
       return res.status(404).json({ error: 'Usuario no encontrado' });
     }
@@ -53,38 +63,20 @@ async function enviarCorreoVerificacion(email, nombre, apellido) {
 }
 
 exports.createUsuario = async (req, res) => {
-  const { nombre, apellido, direccion, email, contrasena, foto, fecha_registro } = req.body;
+  const { nombre, apellido, direccion, email, contrasena, foto } = req.body;
 
   try {
-  
-    const [usuarios] = await pool.query('SELECT * FROM usuarios WHERE email = ?', [email]);
-    if (usuarios.length > 0) {
-      return res.status(400).json({ error: 'El usuario ya existe' });
-    }
-
- 
-    const [result] = await pool.query('INSERT INTO usuarios (nombre, apellido, direccion, email, contrasena, foto, fecha_registro) VALUES (?, ?, ?, ?, ?, ?, ?)', [nombre, apellido, direccion, email, contrasena, foto, fecha_registro]);
-
+    const query = `INSERT INTO clientes (nombre, apellido, direccion, email, contrasena, foto, rol, estado_logueo) VALUES (?, ?, ?, ?, ?, ?, 'cliente', FALSE)`;
+    const [result] = await pool.execute(query, [nombre, apellido, direccion, email, contrasena, foto]);
 
     await enviarCorreoVerificacion(email, nombre, apellido);
 
-    res.status(201).json({
-      id: result.insertId,
-      nombre,
-      apellido,
-      direccion,
-      email,
-      contrasena,
-      foto,
-      fecha_registro,
-    });
-    
+    res.status(201).send({ message: "Usuario creado exitosamente", userId: result.insertId });
   } catch (error) {
-    console.error('Error al crear el usuario:', error);
-    res.status(500).json({ error: 'Error al crear el usuario' });
+    console.error("Error al crear el usuario:", error);
+    res.status(500).send({ message: "Error al crear el usuario" });
   }
 };
-
 
 async function enviarCorreoActualizacion(email, nombre, apellido) {
   let transportador = crearTransportadorEthereal;
@@ -101,9 +93,9 @@ async function enviarCorreoActualizacion(email, nombre, apellido) {
 
 exports.updateUsuario = async (req, res) => { 
   const { id } = req.params;
-  const { nombre, apellido, direccion, email, contrasena, foto, fecha_registro } = req.body;
+  const { nombre, apellido, direccion, email, contrasena, foto } = req.body; 
   try {
-    const [rows] = await pool.query('UPDATE usuarios SET nombre = ?, apellido = ?, direccion = ?, email = ?, contrasena = ?, foto = ?, fecha_registro = ? WHERE id_usuario = ?', [nombre, apellido, direccion, email, contrasena, foto, fecha_registro, id]);
+    const [rows] = await pool.query('UPDATE clientes SET nombre = ?, apellido = ?, direccion = ?, email = ?, contrasena = ?, foto = ? WHERE id_cliente = ?', [nombre, apellido, direccion, email, contrasena, foto, id]);
     if (rows.affectedRows === 0) {
       return res.status(404).json({ error: 'Usuario no encontrado' });
     }
@@ -117,8 +109,7 @@ exports.updateUsuario = async (req, res) => {
       direccion,
       email,
       contrasena,
-      foto,
-      fecha_registro
+      foto
     });
   } catch (error) {
     console.error('Error al actualizar el usuario:', error);
@@ -129,7 +120,7 @@ exports.updateUsuario = async (req, res) => {
 exports.deleteUsuario = async (req, res) => {
   const { id } = req.params;
   try {
-    const [result] = await pool.query('DELETE FROM usuarios WHERE id_usuario = ?', [id]);
+    const [result] = await pool.query('DELETE FROM clientes WHERE id_cliente = ?', [id]);
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: 'Usuario no encontrado' });
     }

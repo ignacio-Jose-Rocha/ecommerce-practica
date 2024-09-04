@@ -17,15 +17,20 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 const routerUsuario = require('./routes/usuariosRoutes');
 app.use('/usuario', routerUsuario);
- 
-const routerReclamo = require('./routes/reclamosRoutes');
-app.use('/reclamos', routerReclamo);
+
 
 const routerProducto = require('./routes/productosRoutes');
 app.use('/productos', routerProducto);
 
 const routerPedidos = require('./routes/pedidosRoutes');
 app.use('/pedidos', routerPedidos);
+
+const routerMetodos = require('./routes/metodosPagoRoutes');
+app.use('/metodos', routerMetodos);
+
+const routerCarrito = require('./routes/carritoRoutes');
+app.use('/carrito', routerCarrito);
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use((err, req, res, next) => {
