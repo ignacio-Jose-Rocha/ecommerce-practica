@@ -1,6 +1,63 @@
 const pool = require('../config.js');
 const crypto = require('crypto');
 
+
+
+require('dotenv').config();
+const paypal = require('paypal-rest-sdk');
+
+
+paypal.configure({
+    'mode': 'sandbox', 
+    'client_id': process.env.PAYPAL_CLIENT_ID,
+    'client_secret': process.env.PAYPAL_SECRET
+});
+
+
+exports.crearPagoConPaypal = (req, res) => {
+    const { nombre, precio } = req.body;
+    const pagoPaypal = JSON.stringify({
+        'intent': 'sale',
+        'redirect_urls': {
+            'return_url': 'http://localhost:3000/metodosPago/process',
+            'cancel_url': 'http://localhost:3000/metodosPago/cancel'
+        },
+        'payer': {
+            'payment_method': 'paypal'
+        },
+        'transactions': [{
+            'amount': {
+                'total': precio,
+                'currency': 'USD'
+            },
+            'description': nombre
+        }]
+    });
+
+    paypal.payment.create(pagoPaypal, function(error, payment) {
+        if (error) {
+            console.error(error);
+            res.status(500).json({ error: 'Error al crear el pago con PayPal' });
+        } else {
+            let links = {};
+            payment.links.forEach(function(linkObj) {
+                links[linkObj.rel] = {
+                    'href': linkObj.href,
+                    'method': linkObj.method
+                };
+            });
+            if (links.hasOwnProperty('approval_url')) {
+                res.redirect(links['approval_url'].href);
+            } else {
+                console.error('No se encontró la URL de aprobación de PayPal.');
+                res.status(500).json({ error: 'Error al obtener la URL de aprobación de PayPal' });
+            }
+        }
+    });
+};
+
+
+
 exports.getAllMetodosPago = async (req, res) => {
     try {
         const [rows] = await pool.query('SELECT * FROM metodos_pago');
