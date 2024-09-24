@@ -13,7 +13,7 @@ exports.getAllUsuariosClientes = async (req, res) => {
 
 exports.getAllUsuariosadministrador = async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM usuarios WHERE rol = "administrador"');
+    const [rows] = await pool.query('SELECT * FROM clientes WHERE rol = "administrador"');
     res.json(rows);
   } catch (error) {
     console.error('Error al obtener los usuarios:', error);
@@ -24,7 +24,7 @@ exports.getAllUsuariosadministrador = async (req, res) => {
 exports.getUsuarioById = async (req, res) => {
   const { id } = req.params;
   try {
-    const [rows] = await pool.query('SELECT * FROM usuarios WHERE id_cliente = ?', [id]);
+    const [rows] = await pool.query('SELECT * FROM clientes WHERE id_cliente = ?', [id]);
     if (rows.length === 0) {
       return res.status(404).json({ error: 'Usuario no encontrado' });
     }
@@ -134,11 +134,11 @@ exports.deleteUsuario = async (req, res) => {
 exports.loginUsuario = async (req, res) => {
   const { email, contrasena } = req.body;
   try {
-    const [rows] = await pool.query('SELECT * FROM usuarios WHERE email = ? AND contrasena = ?', [email, contrasena]);
+    const [rows] = await pool.query('SELECT * FROM clientes WHERE email = ? AND contrasena = ?', [email, contrasena]);
     if (rows.length === 0) {
       return res.status(404).json({ error: 'Usuario no encontrado' });
     }
-    await pool.query('UPDATE usuarios SET logueado = 1 WHERE email = ?', [email]);
+    await pool.query(`UPDATE clientes SET estado_logueo = ${1} WHERE email = ?`, [email]);
     res.json(rows[0]);
   } catch (error) {
     console.error('Error al obtener el usuario o al actualizar el estado de logueado:', error);
